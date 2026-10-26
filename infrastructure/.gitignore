@@ -1,0 +1,18 @@
+# Terraform: lokale Arbeitsdateien (nie committen)
+.terraform/
+
+# State-Dateien enthalten Interna der Infrastruktur (teils Geheimnisse) -> niemals committen
+*.tfstate
+*.tfstate.*
+
+# Variablenwerte (können Passwörter enthalten) -> nicht committen
+*.tfvars
+*.tfvars.json
+
+# Absturz-Logs und lokale Überschreibungen
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
