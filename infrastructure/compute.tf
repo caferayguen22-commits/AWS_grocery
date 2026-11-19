@@ -9,6 +9,7 @@ resource "aws_instance" "app" {
   subnet_id                   = aws_subnet.public[0].id
   vpc_security_group_ids      = [aws_security_group.ec2.id]
   key_name                    = var.key_name
+  iam_instance_profile        = aws_iam_instance_profile.app.name
   associate_public_ip_address = true
 
   # Festplatte: klein und verschlüsselt
