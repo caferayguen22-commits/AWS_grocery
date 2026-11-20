@@ -37,6 +37,7 @@ def get_postgres_uri():
     if secret_name:
         client = boto3.client("secretsmanager", region_name=os.getenv("AWS_REGION", "eu-north-1"))
         secret = json.loads(client.get_secret_value(SecretId=secret_name)["SecretString"])
+        print(f"✅ DB credentials loaded from Secrets Manager ({secret_name})")
         return (f"postgresql://{quote_plus(secret['username'])}:{quote_plus(secret['password'])}"
                 f"@{secret['host']}:{secret['port']}/{secret['dbname']}")
     return os.getenv("POSTGRES_URI", "postgresql://postgres:postgres@localhost:5432/postgres")
