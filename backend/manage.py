@@ -7,7 +7,7 @@ from app import create_app, db, Config
 app = create_app()
 migration = Migrate(app, db)
 
-POSTGRES_URI = os.getenv("POSTGRES_URI")
+POSTGRES_URI = Config.POSTGRES_URI
 IS_RDS = Config.is_rds()
 IS_LOCAL = not IS_RDS
 

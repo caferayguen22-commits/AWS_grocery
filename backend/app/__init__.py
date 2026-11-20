@@ -15,6 +15,9 @@ from dotenv import load_dotenv
 from datetime import timedelta
 import requests
 from dateutil import parser
+import json
+import boto3
+from urllib.parse import quote_plus
 
 load_dotenv()
 db = SQLAlchemy()
@@ -27,6 +30,16 @@ FRONTEND_BUILD_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), ".
 TMP_ZIP_PATH = os.path.join(tempfile.gettempdir(), "frontend-build.zip")
 GITHUB_RELEASE_URL = f"https://github.com/{GITHUB_USERNAME}/{REPO_NAME}/releases/latest/download/{FRONTEND_BUILD_ZIP}"
 
+def get_postgres_uri():
+    """Holt die DB-Zugangsdaten zur Laufzeit aus Secrets Manager.
+    Ohne DB_SECRET_NAME (lokale Entwicklung) bleibt der alte Weg über POSTGRES_URI."""
+    secret_name = os.getenv("DB_SECRET_NAME")
+    if secret_name:
+        client = boto3.client("secretsmanager", region_name=os.getenv("AWS_REGION", "eu-north-1"))
+        secret = json.loads(client.get_secret_value(SecretId=secret_name)["SecretString"])
+        return (f"postgresql://{quote_plus(secret['username'])}:{quote_plus(secret['password'])}"
+                f"@{secret['host']}:{secret['port']}/{secret['dbname']}")
+    return os.getenv("POSTGRES_URI", "postgresql://postgres:postgres@localhost:5432/postgres")
 
 class Config:
     """App configuration variables."""
@@ -36,7 +49,7 @@ class Config:
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgres")
     POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 
-    POSTGRES_URI = os.getenv("POSTGRES_URI", "postgresql://postgres:postgres@localhost:5432/postgres")
+    POSTGRES_URI = get_postgres_uri()
 
     if not POSTGRES_URI:
         raise ValueError("POSTGRES_URI environment variable is not set.")
@@ -53,7 +66,7 @@ class Config:
         return not cls.is_rds()
 
     SQLALCHEMY_DATABASE_URI = POSTGRES_URI
-    print(f"Using Database: {SQLALCHEMY_DATABASE_URI}")
+    print(f"Using Database: {SQLALCHEMY_DATABASE_URI.split('@')[-1]}")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
@@ -67,7 +80,7 @@ def detect_environment():
         print("Running in Local Docker PostgreSQL")
     else:
         print("Could not detect database environment. Set POSTGRES_URI manually.")
-    print(f"Using Database: {Config.SQLALCHEMY_DATABASE_URI}")
+    print(f"Using Database: {Config.SQLALCHEMY_DATABASE_URI.split('@')[-1]}")
 
 
 detect_environment()
